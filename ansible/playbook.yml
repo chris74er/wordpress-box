@@ -1,0 +1,10 @@
+
+- hosts: all
+  roles:
+  - mariadb
+  - php
+  - role: oefenweb.wordpress
+    become: true
+  - role: apache
+    become: true
+    tags: apache
