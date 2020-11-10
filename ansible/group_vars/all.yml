@@ -1,6 +1,8 @@
 ---
 wordpress_host: 192.168.98.117
 
+install_apache: true
+
 wp_title: wordpress
 
 wp_admin_name: admin

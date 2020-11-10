@@ -8,3 +8,4 @@
   - role: apache
     become: true
     tags: apache
+    when: install_apache
