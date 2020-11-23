@@ -5,6 +5,8 @@
   - php
   - role: oefenweb.wordpress
     become: true
+  - role: wordpress-config
+    become: true
   - role: apache
     become: true
     tags: apache

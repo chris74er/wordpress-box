@@ -9,6 +9,8 @@ wp_admin_name: admin
 wp_admin_email: root@wordpress.box
 wp_admin_password: changeme
 
+wp_config_reverse_proxy: true
+
 dbname: wordpress
 dbuser: wordpress
 dbpassword: changeme
