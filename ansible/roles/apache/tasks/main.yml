@@ -6,10 +6,10 @@
 
 - name: apache - add virtual hosts
   template:
-    src: apache_vhost.conf.j2
+    src: '{{ apache_vhost_template_path | default("apache_vhost.conf.j2") }}'
     dest: '/etc/apache2/sites-available/{{ item.title }}.conf'
   vars:
-    wp_path: '{{ item.path }}'
+    item: '{{ item }}'
   loop: '{{ wordpress_installs }}'
 
 - name: apache - enabled mod_rewrite
