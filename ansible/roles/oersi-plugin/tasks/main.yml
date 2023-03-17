@@ -5,6 +5,23 @@
     wp-cli --allow-root --no-color --path='{{ item.path }}' rewrite structure '{{ item.permalink_structure | default("/%postname%/") }}' --hard
   loop: "{{ wordpress_installs }}"
 
+# START -- WORKAROUND FOR MISSING .htaccess from previous command
+- name: Check if .htaccess exists
+  stat:
+    path: "{{ item.path }}/.htaccess"
+  register: htaccess_stat_results
+  loop: "{{ wordpress_installs }}"
+    
+- name: Create .htaccess, if it doesnt exist already
+  copy:
+    src: ".htaccess"
+    dest: "{{ item.0.path }}/.htaccess"
+    owner: www-data
+    group: www-data
+  when: not item.1.stat.exists
+  loop: "{{ wordpress_installs | zip(htaccess_stat_results.results) | list }}"
+# END -- WORKAROUND FOR MISSING .htaccess from previous command
+
 - name: download plugin
   get_url:
     url: '{{ oersi_plugin_archive_url }}'

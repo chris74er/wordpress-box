@@ -26,3 +26,12 @@ When the installation is complete (a few minutes, depending on the download spee
 Login
 
 <http://192.168.98.117/wp-admin> => admin / changeme
+
+## OERSI-Plugin
+
+Per default, the [wordpress-oersi-plugin](https://gitlab.com/TIBHannover/oer/wordpress-oersi-plugin) will be installed and an example search-page will be created.
+
+To deactivate the plugin, set `install_oersi_plugin: false`
+
+If you want to test the current develop-version, set `oersi_plugin_archive_url: https://gitlab.com/TIBHannover/oer/wordpress-oersi-plugin/-/jobs/artifacts/develop/download?job=build`
+
