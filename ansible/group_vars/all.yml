@@ -38,3 +38,9 @@ wordpress_installs:   # see - https://galaxy.ansible.com/oefenweb/wordpress
     users: {}
     options: []
     queries: []
+
+php_config:
+  - key: upload_max_filesize
+    value: 128M
+  - key: post_max_size
+    value: 128M

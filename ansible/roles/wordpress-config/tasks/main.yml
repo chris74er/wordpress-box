@@ -1,3 +1,14 @@
 ---
 - include: reverseproxy.yml
   when: wp_config_reverse_proxy
+
+- name: edit php config
+  become: true
+  lineinfile:
+    create: true
+    owner: www-data
+    group: www-data
+    path: "{{ item[0].path }}/.htaccess"
+    line: "php_value {{ item[1].key }} {{ item[1].value }}"
+    regexp: "php_value {{ item[1].key }}\\s.*"
+  loop: '{{ wordpress_installs | product(php_config) }}'
