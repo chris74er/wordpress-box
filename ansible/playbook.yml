@@ -5,7 +5,7 @@
   vars:
     wordpress_host: 192.168.98.117
     install_apache: true
-    install_oersi_plugin: true  # as long as the oersi-plugin is not available in the official wordpress-plugin-repository, we install it manually via a separate role
+    install_oersi_plugin: true
     wp_title: wordpress-example
     wp_admin_name: admin
     wp_admin_email: root@wordpress.box
@@ -21,6 +21,9 @@
       - key: post_max_size
         value: 128M
 
+  roles:
+    - mariadb
+
   tasks:
     - name: Update apt cache
       apt:
@@ -28,14 +31,14 @@
 
     - name: Install necessary dependencies
       apt:
-        name: 
+        name:
           - apache2
-          - mariadb-server
           - php
           - php-mysql
           - php-curl
           - curl
           - php-cli
+          - python3-pymysql
         state: present
 
     - name: Start Apache service
@@ -43,32 +46,6 @@
         name: apache2
         state: started
         enabled: yes
-
-    - name: Start MariaDB service
-      service:
-        name: mariadb
-        state: started
-        enabled: yes
-
-    - name: Secure MariaDB installation
-      shell: |
-        mysql -e "UPDATE mysql.user SET Password = PASSWORD('{{ dbpassword }}') WHERE User = 'root';"
-        mysql -e "DELETE FROM mysql.user WHERE User='';"
-        mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-        mysql -e "DROP DATABASE test;"
-        mysql -e "FLUSH PRIVILEGES;"
-
-    - name: Create MySQL database
-      mysql_db:
-        name: "{{ dbname }}"
-        state: present
-
-    - name: Create MySQL user
-      mysql_user:
-        name: "{{ dbuser }}"
-        password: "{{ dbpassword }}"
-        priv: "{{ dbname }}.*:ALL"
-        state: present
 
     - name: Download WordPress
       get_url:
