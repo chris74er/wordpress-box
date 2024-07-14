@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
     ansible.version = "latest"
     ansible.compatibility_mode = "2.0"
     ansible.playbook = "ansible/playbook.yml"
-    ansible.galaxy_role_file = "ansible/requirements.yml"
+    ansible.galaxy_role_file = "/vagrant/requirements.yml"
     ansible.verbose = "vv"
   end
   
