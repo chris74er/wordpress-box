@@ -50,15 +50,12 @@
         state: started
         enabled: yes
 
-    - name: Secure MySQL installation
-      mysql_secure_installation:
-        login_user: root
-        login_password: ""
-        root_password: "{{ dbpassword }}"
-        remove_anonymous_users: yes
-        disallow_root_login_remotely: yes
-        remove_test_database: yes
-        state: present
+    - name: Set MySQL root password and apply security settings
+      shell: |
+        mysql -e "UPDATE mysql.user SET Password = PASSWORD('{{ dbpassword }}') WHERE User = 'root';"
+        mysql -e "DELETE FROM mysql.user WHERE User='';"
+        mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+        mysql -e "FLUSH PRIVILEGES;"
 
     - name: Create MySQL database
       mysql_db:
