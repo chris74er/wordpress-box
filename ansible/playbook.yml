@@ -30,7 +30,7 @@
       apt:
         name: 
           - apache2
-          - mysql-server
+          - mariadb-server
           - php
           - php-mysql
           - php-curl
@@ -44,18 +44,22 @@
         state: started
         enabled: yes
 
-    - name: Start MySQL service
+    - name: Start MariaDB service
       service:
-        name: mysql
+        name: mariadb
         state: started
         enabled: yes
 
-    - name: Set MySQL root password and apply security settings
-      shell: |
-        mysql -e "UPDATE mysql.user SET Password = PASSWORD('{{ dbpassword }}') WHERE User = 'root';"
-        mysql -e "DELETE FROM mysql.user WHERE User='';"
-        mysql -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-        mysql -e "FLUSH PRIVILEGES;"
+    - name: Set MariaDB root password and apply security settings
+      mysql_secure_installation:
+        login_user: root
+        login_password: ''
+        new_password: '{{ dbpassword }}'
+        confirm_password: '{{ dbpassword }}'
+        remove_anonymous_users: yes
+        disallow_root_login_remotely: yes
+        remove_test_db: yes
+        state: present
 
     - name: Create MySQL database
       mysql_db:
@@ -166,45 +170,4 @@
           $base = '/';
           define('DOMAIN_CURRENT_SITE', '{{ wordpress_host }}');
           define('PATH_CURRENT_SITE', '/');
-          define('SITE_ID_CURRENT_SITE', 1);
-          define('BLOG_ID_CURRENT_SITE', 1);
-      when: ansible_distribution == "Ubuntu"
-
-    - name: Create .htaccess for Multisite
-      copy:
-        dest: /var/www/{{ wp_title }}/.htaccess
-        content: |
-          <IfModule mod_rewrite.c>
-          RewriteEngine On
-          RewriteBase /
-          RewriteRule ^index\.php$ - [L]
-
-          # Add a trailing slash to /wp-admin
-          RewriteRule ^wp-admin$ wp-admin/ [R=301,L]
-
-          RewriteCond %{REQUEST_FILENAME} -f [OR]
-          RewriteCond %{REQUEST_FILENAME} -d
-          RewriteRule ^ - [L]
-          RewriteRule ^(wp-(content|admin|includes).*) $1 [L]
-          RewriteRule ^(.*\.php)$ $1 [L]
-          RewriteRule . index.php [L]
-          </IfModule>
-      when: ansible_distribution == "Ubuntu"
-
-    - name: Set correct permissions
-      file:
-        path: /var/www/{{ wp_title }}
-        state: directory
-        recurse: yes
-        owner: www-data
-        group: www-data
-        mode: '0755'
-
-    - name: Create Subfolder Sites
-      shell: |
-        wp site create --slug=eins --title="Eins Multisite" --email="{{ wp_admin_email }}" --allow-root
-        wp site create --slug=zwei --title="Zwei Multisite" --email="{{ wp_admin_email }}" --allow-root
-        wp site create --slug=drei --title="Drei Multisite" --email="{{ wp_admin_email }}" --allow-root
-      args:
-        chdir: /var/www/{{ wp_title }}
-      when: ansible_distribution == "Ubuntu"
+          defi
