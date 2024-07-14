@@ -22,14 +22,102 @@
         value: 128M
 
   tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
     - name: Install necessary dependencies
       apt:
         name: 
-          - curl
-          - php-cli
+          - apache2
+          - mysql-server
+          - php
           - php-mysql
           - php-curl
+          - curl
+          - php-cli
         state: present
+
+    - name: Start Apache service
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Start MySQL service
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Secure MySQL installation
+      mysql_secure_installation:
+        login_user: root
+        login_password: ""
+        root_password: "{{ dbpassword }}"
+        remove_anonymous_users: yes
+        disallow_root_login_remotely: yes
+        remove_test_database: yes
+        state: present
+
+    - name: Create MySQL database
+      mysql_db:
+        name: "{{ dbname }}"
+        state: present
+
+    - name: Create MySQL user
+      mysql_user:
+        name: "{{ dbuser }}"
+        password: "{{ dbpassword }}"
+        priv: "{{ dbname }}.*:ALL"
+        state: present
+
+    - name: Download WordPress
+      get_url:
+        url: https://wordpress.org/latest.tar.gz
+        dest: /tmp/latest.tar.gz
+
+    - name: Extract WordPress
+      unarchive:
+        src: /tmp/latest.tar.gz
+        dest: /var/www
+        remote_src: yes
+
+    - name: Rename WordPress directory
+      command: mv /var/www/wordpress /var/www/{{ wp_title }}
+      args:
+        creates: /var/www/{{ wp_title }}
+
+    - name: Set correct permissions
+      file:
+        path: /var/www/{{ wp_title }}
+        state: directory
+        recurse: yes
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: Create wp-config.php
+      template:
+        src: wp-config.php.j2
+        dest: /var/www/{{ wp_title }}/wp-config.php
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    - name: Enable Apache rewrite module
+      command: a2enmod rewrite
+
+    - name: Set Apache to allow .htaccess overrides
+      replace:
+        path: /etc/apache2/apache2.conf
+        regexp: 'AllowOverride None'
+        replace: 'AllowOverride All'
+
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
 
     - name: Download wp-cli
       get_url:
@@ -51,6 +139,18 @@
       fail:
         msg: "wp-cli was not installed properly"
       when: wp_cli_info.rc != 0
+
+    - name: Install WordPress
+      command: >
+        wp core install
+        --url="http://{{ wordpress_host }}"
+        --title="{{ wp_title }}"
+        --admin_user="{{ wp_admin_name }}"
+        --admin_password="{{ wp_admin_password }}"
+        --admin_email="{{ wp_admin_email }}"
+        --allow-root
+      args:
+        chdir: /var/www/{{ wp_title }}
 
     - name: Enable WordPress Multisite
       command: wp core multisite-convert --allow-root
