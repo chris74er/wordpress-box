@@ -1,17 +1,84 @@
-
+---
 - hosts: all
+  become: yes
+
   roles:
-  - mariadb
-  - php
-  - role: oefenweb.wordpress
-    become: true
-  - role: wordpress-config
-    become: true
-  - role: apache
-    become: true
-    tags: apache
-    when: install_apache
-  - role: oersi-plugin
-    become: true
-    when: install_oersi_plugin
-    tags: oersi-plugin
+    - mariadb
+    - php
+    - role: oefenweb.wordpress
+      become: true
+    - role: wordpress-config
+      become: true
+    - role: apache
+      become: true
+      tags: apache
+      when: install_apache
+    - role: oersi-plugin
+      become: true
+      when: install_oersi_plugin
+      tags: oersi-plugin
+
+  tasks:
+    - name: Download wp-cli
+      get_url:
+        url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        dest: /usr/local/bin/wp
+        mode: '0755'
+
+    - name: Ensure wp-cli is executable
+      file:
+        path: /usr/local/bin/wp
+        mode: '0755'
+        state: file
+
+    - name: Verify wp-cli installation
+      command: wp --info
+      register: wp_cli_info
+
+    - name: Fail if wp-cli is not installed properly
+      fail:
+        msg: "wp-cli was not installed properly"
+      when: wp_cli_info.rc != 0
+
+    - name: Enable WordPress Multisite
+      command: wp core multisite-convert --allow-root
+      args:
+        chdir: /var/www/{{ wp_title }}
+
+    - name: Update wp-config.php for Multisite
+      lineinfile:
+        path: /var/www/{{ wp_title }}/wp-config.php
+        insertafter: "/* That's all, stop editing! Happy publishing. */"
+        line: |
+          define('WP_ALLOW_MULTISITE', true);
+          define('MULTISITE', true);
+          define('SUBDOMAIN_INSTALL', false);
+          $base = '/';
+          define('DOMAIN_CURRENT_SITE', '{{ wordpress_host }}');
+          define('PATH_CURRENT_SITE', '/');
+          define('SITE_ID_CURRENT_SITE', 1);
+          define('BLOG_ID_CURRENT_SITE', 1);
+
+    - name: Create .htaccess for Multisite
+      copy:
+        dest: /var/www/{{ wp_title }}/.htaccess
+        content: |
+          RewriteEngine On
+          RewriteBase /
+          RewriteRule ^index\.php$ - [L]
+          # add a trailing slash to /wp-admin
+          RewriteRule ^wp-admin$ wp-admin/ [R=301,L]
+          RewriteCond %{REQUEST_FILENAME} -f [OR]
+          RewriteCond %{REQUEST_FILENAME} -d
+          RewriteRule ^ - [L]
+          RewriteRule ^(wp-(content|admin|includes).*) $1 [L]
+          RewriteRule ^(.*\.php)$ $1 [L]
+          RewriteRule . index.php [L]
+
+    - name: Create Subfolder Sites
+      shell: |
+        wp site create --slug=eins --title="Eins Multisite" --email="{{ wp_admin_email }}" --allow-root
+        wp site create --slug=zwei --title="Zwei Multisite" --email="{{ wp_admin_email }}" --allow-root
+        wp site create --slug=drei --title="Drei Multisite" --email="{{ wp_admin_email }}" --allow-root
+      args:
+        chdir: /var/www/{{ wp_title }}
