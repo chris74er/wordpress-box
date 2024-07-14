@@ -1,5 +1,4 @@
 require 'yaml'
-settings = YAML.load_file 'ansible/group_vars/all.yml'
 
 Vagrant.configure("2") do |config|
 
@@ -23,7 +22,6 @@ Vagrant.configure("2") do |config|
     ansible.playbook = "ansible/playbook.yml"
     ansible.galaxy_role_file = "ansible/requirements.yml"
     ansible.verbose = "vv"
-    ansible.extra_vars = settings
   end
-  
+
 end
