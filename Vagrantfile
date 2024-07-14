@@ -1,5 +1,3 @@
-require 'yaml'
-
 Vagrant.configure("2") do |config|
 
   config.vm.define "wordpress-vm" do |srv|
@@ -23,5 +21,5 @@ Vagrant.configure("2") do |config|
     ansible.galaxy_role_file = "ansible/requirements.yml"
     ansible.verbose = "vv"
   end
-
+  
 end
